@@ -203,20 +203,9 @@ fn hotreload(
 
                 cmd.entity(entity)
                     .despawn_descendants()
-                    .retain::<KeepComps>();
+                    .remove::<FullyBuild>();
             });
     });
-}
-
-#[derive(Bundle)]
-struct KeepComps {
-    pub parent: Parent,
-    pub children: Children,
-    pub ui: HtmlNode,
-    pub unsloed: UnslotedChildren,
-    pub slot: SlotPlaceholder,
-    pub inside: InsideSlot,
-    pub scope: TemplateScope,
 }
 
 fn move_children_to_slot(
