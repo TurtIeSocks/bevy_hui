@@ -6,7 +6,7 @@ use crate::{
     styles::{HoverTimer, HtmlStyle, PressedTimer},
     util::SlotId,
 };
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{platform::collections::HashMap, prelude::*};
 use nom::{
     bytes::complete::{is_not, tag, take_until},
     character::complete::multispace0,
@@ -213,7 +213,7 @@ fn move_children_to_slot(
     unsloted_includes: Query<(Entity, &UnslotedChildren)>,
     children: Query<&Children>,
     slots: Query<(Entity, &SlotPlaceholder)>,
-    parent: Query<&Parent>,
+    parent: Query<&ChildOf>,
 ) {
     unsloted_includes
         .iter()
@@ -225,22 +225,22 @@ fn move_children_to_slot(
                 return;
             };
 
-            let Ok(slot_parent) = parent.get(placeholder_entity).map(|p| p.get()) else {
+            let Ok(slot_parent) = parent.get(placeholder_entity).map(|p| p.parent()) else {
                 error!("parentless slot, impossible");
                 return;
             };
 
             _ = children.get(*slot_holder).map(|children| {
                 children.iter().for_each(|child| {
-                    if *child != slot_parent {
-                        cmd.entity(*child).insert(InsideSlot { owner: entity });
-                        cmd.entity(slot_parent).add_child(*child);
+                    if child != slot_parent {
+                        cmd.entity(child).insert(InsideSlot { owner: entity });
+                        cmd.entity(slot_parent).add_child(child);
                     }
                 })
             });
 
             cmd.entity(entity).remove::<UnslotedChildren>();
-            cmd.entity(placeholder_entity).despawn_recursive();
+            cmd.entity(placeholder_entity).despawn();
             cmd.entity(*slot_holder).despawn();
         });
 }
@@ -421,7 +421,11 @@ impl<'w, 's> TemplateBuilder<'w, 's> {
 
         // ---------------------
         // shadow
-        if let Some(shadow) = styles.computed.shadow {
+        if let Some(shadow) = styles.computed.shadow.as_ref() {
+            self.cmd.entity(entity).insert(shadow.clone());
+        }
+
+        if let Some(shadow) = styles.computed.text_shadow.as_ref() {
             self.cmd.entity(entity).insert(shadow.clone());
         }
 
