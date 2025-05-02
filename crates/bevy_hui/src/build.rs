@@ -202,7 +202,7 @@ fn hotreload(
                 }
 
                 cmd.entity(entity)
-                    .despawn_descendants()
+                    .despawn_related::<Children>()
                     .remove::<FullyBuild>();
             });
     });
